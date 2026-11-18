@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starlight Pulls – Magic Card Collector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#0a0b2a; --indigo:#171a52; --violet:#3a2a7a; --gold:#f4c95d; --gold2:#ffe9a8;
+  --text:#eef0ff; --muted:#9aa0d0;
+  --common:#8fa3c4; --rare:#4aa8ff; --epic:#b45cff; --legend:#ffcf4a;
+  --display:'Cinzel',Georgia,'Times New Roman',serif; --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);color:var(--text);min-height:100vh;display:flex;flex-direction:column;
+  background:
+   radial-gradient(1.5px 1.5px at 20% 30%,#fff9 50%,transparent 51%),
+   radial-gradient(1px 1px at 70% 20%,#fff8 50%,transparent 51%),
+   radial-gradient(1.5px 1.5px at 85% 70%,#ffe9a8aa 50%,transparent 51%),
+   radial-gradient(1px 1px at 40% 80%,#fff7 50%,transparent 51%),
+   radial-gradient(ellipse at 50% -10%,var(--violet),transparent 60%),
+   linear-gradient(180deg,var(--night),var(--indigo) 100%);
+  background-size:180px 180px,240px 240px,310px 310px,200px 200px,100% 100%,100% 100%;
+  background-attachment:fixed}
+button{font-family:inherit;cursor:pointer;border:0;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* Header */
+header{position:sticky;top:0;z-index:20;background:#0a0b2add;backdrop-filter:blur(10px);border-bottom:1px solid #f4c95d44}
+.bar{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.logo{font-family:var(--display);font-weight:800;font-size:1.35rem;color:var(--gold);letter-spacing:.04em}
+.coins{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2b2370,#1b1a52);border:1.5px solid var(--gold);
+  padding:6px 16px;border-radius:999px;font-weight:800;font-size:1.1rem;box-shadow:0 0 14px #f4c95d44}
+.coins .ico{font-size:1.2rem}
+.coins.bump{animation:bump .4s}
+@keyframes bump{50%{transform:scale(1.15);box-shadow:0 0 26px #f4c95d}}
+nav{display:flex;gap:6px;width:100%}
+nav button{flex:1;padding:10px 6px;border-radius:10px;background:#ffffff0f;font-weight:800;font-size:.95rem;border:1px solid transparent;transition:.2s}
+nav button:hover{background:#ffffff1c}
+nav button.active{background:linear-gradient(180deg,#f4c95d,#d9a62e);color:#2a1d00;box-shadow:0 0 14px #f4c95d66}
+@media(min-width:720px){nav{width:auto}nav button{padding:10px 20px}}
+
+main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:22px 16px 40px}
+.view{display:none}.view.active{display:block}
+h2{font-family:var(--display);font-size:1.7rem;color:var(--gold2);margin-bottom:6px}
+.sub{color:var(--muted);margin-bottom:18px;max-width:60ch;line-height:1.5}
+.btn{background:linear-gradient(180deg,#f4c95d,#d9a62e);color:#2a1d00;font-weight:800;padding:11px 22px;border-radius:12px;font-size:1rem;box-shadow:0 4px 0 #8f6a12;transition:transform .1s}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8f6a12}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.ghost{background:#ffffff14;color:var(--text);box-shadow:none;border:1px solid #ffffff33}
+
+/* Memory */
+.mem-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mem-stats{font-weight:800;color:var(--gold2)}
+.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:480px;margin:0 auto}
+.mcard{aspect-ratio:1;perspective:700px;background:none;padding:0}
+.mcard .in{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.mcard.up .in,.mcard.done .in{transform:rotateY(180deg)}
+.mcard .f,.mcard .b{position:absolute;inset:0;display:grid;place-items:center;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.mcard .b{background:radial-gradient(circle at 50% 40%,#5a43b8,#241c63);border:2px solid #f4c95d88;font-size:1.8rem;color:var(--gold)}
+.mcard .f{transform:rotateY(180deg);background:#fff4d6;font-size:clamp(1.8rem,9vw,3rem);border:2px solid var(--gold)}
+.mcard.done .f{background:#d6ffe1;border-color:#4ade80;box-shadow:0 0 16px #4ade8088}
+.mem-win{text-align:center;margin-top:18px;min-height:60px;font-weight:800;color:var(--gold2);font-size:1.15rem}
+
+/* Shop */
+.packs{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pack{background:linear-gradient(180deg,#ffffff12,#ffffff05);border:1px solid #ffffff22;border-radius:20px;padding:22px;text-align:center}
+.pack .art{width:130px;height:180px;margin:0 auto 14px;border-radius:14px;display:grid;place-items:center;font-size:3.4rem;position:relative;
+  background:linear-gradient(145deg,#4a3aa8,#1e1858);border:2px solid var(--gold);box-shadow:0 10px 26px #0008,0 0 22px #f4c95d44}
+.pack.royal .art{background:linear-gradient(145deg,#ffd76a,#b8791a 45%,#6c2fb8);box-shadow:0 10px 26px #0008,0 0 30px #ffcf4a99}
+.pack h3{font-family:var(--display);color:var(--gold2);font-size:1.25rem;margin-bottom:4px}
+.pack p{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.odds{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px 0 16px;font-size:.78rem;font-weight:800}
+.odds span{padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+
+/* Rarity styling */
+.card{position:relative;aspect-ratio:2/3;border-radius:14px;padding:8px;display:flex;flex-direction:column;text-align:center;overflow:hidden;
+  background:linear-gradient(180deg,#232763,#12143f);border:3px solid var(--rc);box-shadow:0 0 12px var(--rg)}
+.card .art{flex:1;display:grid;place-items:center;font-size:clamp(2.2rem,8vw,3.6rem);background:#0006;border-radius:9px;overflow:hidden}
+.card .art img{width:100%;height:100%;object-fit:cover}
+.card .nm{font-weight:800;font-size:.82rem;margin-top:6px;line-height:1.15}
+.card .rl{font-size:.68rem;font-weight:800;color:var(--rc);margin-top:2px}
+.card.Common{--rc:var(--common);--rg:#8fa3c433}
+.card.Rare{--rc:var(--rare);--rg:#4aa8ff77}
+.card.Epic{--rc:var(--epic);--rg:#b45cffaa;background:linear-gradient(180deg,#3a1f6e,#170f3c)}
+.card.Legendary{--rc:var(--legend);--rg:#ffcf4acc;background:linear-gradient(180deg,#5b3a0b,#241437);animation:pulse 2.6s infinite}
+@keyframes pulse{50%{box-shadow:0 0 28px #ffcf4a}}
+.card.Legendary::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:color-dodge;opacity:.55;
+  background:linear-gradient(115deg,transparent 20%,#ff6ad5 35%,#6ad8ff 45%,#fff36a 55%,#7dff9a 65%,transparent 80%);
+  background-size:250% 250%;animation:holo 3.2s linear infinite}
+@keyframes holo{from{background-position:130% 0}to{background-position:-130% 0}}
+.card.locked{filter:brightness(.4) grayscale(.8);box-shadow:none;animation:none}
+.card.locked::after{display:none}
+.card.locked .art{filter:brightness(0)}
+.card.locked .art span{filter:none;color:#fff;font-weight:800;font-size:1.8rem}
+.badge{position:absolute;top:6px;right:6px;z-index:2;background:var(--gold);color:#2a1d00;font-weight:800;font-size:.75rem;padding:1px 8px;border-radius:99px}
+.new{position:absolute;top:6px;left:6px;z-index:2;background:#ff4d8d;color:#fff;font-weight:800;font-size:.68rem;padding:1px 7px;border-radius:99px}
+
+/* Binder */
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.tools .chip{padding:7px 14px;border-radius:99px;background:#ffffff10;border:1px solid #ffffff22;font-weight:700;font-size:.88rem}
+.tools .chip.on{background:var(--gold);color:#2a1d00;border-color:var(--gold)}
+.tools .grow{flex:1}
+.progress{font-weight:800;color:var(--gold2);margin-bottom:10px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:30px}
+
+/* Opening overlay */
+#overlay{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;
+  background:radial-gradient(circle at 50% 40%,#2c1f78ee,#05061ff2);overflow:auto}
+#overlay.show{display:flex}
+#stage{display:flex;align-items:center;justify-content:center;min-height:200px;width:100%}
+.bigpack{width:150px;height:210px;border-radius:16px;display:grid;place-items:center;font-size:4rem;border:3px solid var(--gold);
+  background:linear-gradient(145deg,#6a52d8,#241c63);box-shadow:0 0 40px #f4c95d88}
+.bigpack.royal{background:linear-gradient(145deg,#ffd76a,#b8791a 45%,#6c2fb8)}
+.bigpack.shake{animation:shake .6s infinite}
+@keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg) scale(1.05)}40%{transform:rotate(9deg) scale(1.1)}60%{transform:rotate(-7deg) scale(1.12)}80%{transform:rotate(7deg) scale(1.15)}}
+.burst{position:fixed;left:50%;top:40%;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(circle,#fff,#ffe9a8 30%,#f4c95d66 60%,transparent 70%);animation:burst .9s forwards}
+@keyframes burst{to{width:260vmax;height:260vmax;opacity:0}}
+.reveal{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;width:100%;max-width:900px}
+.flip{width:clamp(100px,27vw,150px);aspect-ratio:2/3;perspective:800px;background:none;padding:0;animation:drop .5s backwards}
+.flip .in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .back,.flip .front{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px}
+.flip .back{display:grid;place-items:center;font-size:2.6rem;color:var(--gold);border:3px solid var(--gold);
+  background:repeating-linear-gradient(45deg,#2a2178,#2a2178 10px,#1c1659 10px,#1c1659 20px);box-shadow:0 0 18px #f4c95d66}
+.flip .front{transform:rotateY(180deg)}
+.flip .front .card{height:100%;aspect-ratio:auto}
+@keyframes drop{from{opacity:0;transform:translateY(-40px) scale(.8)}}
+.hint{color:var(--gold2);font-weight:700;text-align:center}
+
+footer{text-align:center;padding:16px;font-size:.8rem;color:var(--muted);border-top:1px solid #ffffff14}
+footer button{background:none;color:var(--muted);text-decoration:underline;font-size:.8rem;margin-left:8px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:#1b1a52;border:1.5px solid var(--gold);padding:10px 20px;border-radius:12px;
+  font-weight:800;z-index:60;transition:.35s;opacity:0;pointer-events:none;text-align:center;max-width:90vw}
+#toast.show{transform:translateX(-50%);opacity:1}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo">✦ Starlight Pulls</div>
+    <div class="coins" id="coins" aria-live="polite"><span class="ico">🪙</span><span id="coinVal">0</span></div>
+    <nav aria-label="Main">
+      <button data-view="earn" class="active">Earn Coins</button>
+      <button data-view="shop">Pack Shop</button>
+      <button data-view="binder">Collection</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- EARN -->
+  <section id="earn" class="view active">
+    <h2>Memory Match</h2>
+    <p class="sub">Find all 8 pairs. Each match earns 15 coins, and clearing the board earns a 50-coin bonus.</p>
+    <div class="mem-top">
+      <div class="mem-stats">Matches: <span id="mMatches">0</span>/8 &nbsp;•&nbsp; Moves: <span id="mMoves">0</span></div>
+      <button class="btn ghost" id="mReset">New board</button>
+    </div>
+    <div class="mem-grid" id="memGrid"></div>
+    <div class="mem-win" id="memWin"></div>
+  </section>
+
+  <!-- SHOP -->
+  <section id="shop" class="view">
+    <h2>Pack Shop</h2>
+    <p class="sub">Spend your Magic Coins on packs and see which characters answer the call.</p>
+    <div class="packs" id="packs"></div>
+  </section>
+
+  <!-- BINDER -->
+  <section id="binder" class="view">
+    <h2>Card Collection</h2>
+    <div class="progress" id="progress"></div>
+    <div class="tools" id="filters"></div>
+    <div class="tools">
+      <button class="btn" id="convertBtn">Convert duplicates to coins</button>
+      <span class="sub" style="margin:0" id="convertInfo"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+
+<footer>
+  Progress saves automatically in this browser.
+  <button id="resetSave">Reset save data</button>
+</footer>
+
+<div id="overlay" role="dialog" aria-modal="true" aria-label="Pack opening">
+  <div id="stage"></div>
+  <div class="hint" id="hint"></div>
+  <button class="btn" id="doneBtn" style="display:none">Add to collection</button>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+/* =====================================================================
+   CARD DATABASE
+   ---------------------------------------------------------------------
+   HOW TO USE YOUR OWN IMAGES:
+   Each card has an `img` field. Paste your image path or URL between the
+   quotes, e.g.  img: "images/mickey.png"  or  img: "https://site.com/x.png"
+   When `img` is empty (""), the game shows the `emoji` instead.
+   Rarity must be exactly: "Common", "Rare", "Epic" or "Legendary".
+   Keep every `id` unique (it is used in the save file).
+   ===================================================================== */
+const CARDS = [
+  // ---------- COMMON ----------
+  { id:1,  name:"Mickey Mouse",     rarity:"Common",    emoji:"🐭", img:"" /* e.g. "images/mickey.png" */ },
+  { id:2,  name:"Minnie Mouse",     rarity:"Common",    emoji:"🎀", img:"" /* e.g. "images/minnie.png" */ },
+  { id:3,  name:"Donald Duck",      rarity:"Common",    emoji:"🦆", img:"" /* e.g. "images/donald.png" */ },
+  { id:4,  name:"Goofy",            rarity:"Common",    emoji:"🐶", img:"" /* e.g. "images/goofy.png" */ },
+  { id:5,  name:"Pluto",            rarity:"Common",    emoji:"🦴", img:"" /* e.g. "images/pluto.png" */ },
+  { id:6,  name:"Dumbo",            rarity:"Common",    emoji:"🐘", img:"" /* e.g. "images/dumbo.png" */ },
+  { id:7,  name:"Thumper",          rarity:"Common",    emoji:"🐰", img:"" /* e.g. "images/thumper.png" */ },
+  { id:8,  name:"Pumbaa",           rarity:"Common",    emoji:"🐗", img:"" /* e.g. "images/pumbaa.png" */ },
+  { id:9,  name:"Olaf",             rarity:"Common",    emoji:"⛄", img:"" /* e.g. "images/olaf.png" */ },
+  { id:10, name:"Abu",              rarity:"Common",    emoji:"🐒", img:"" /* e.g. "images/abu.png" */ },
+  // ---------- RARE ----------
+  { id:11, name:"Simba",            rarity:"Rare",      emoji:"🦁", img:"" /* e.g. "images/simba.png" */ },
+  { id:12, name:"Stitch",           rarity:"Rare",      emoji:"👽", img:"" /* e.g. "images/stitch.png" */ },
+  { id:13, name:"Woody",            rarity:"Rare",      emoji:"🤠", img:"" /* e.g. "images/woody.png" */ },
+  { id:14, name:"Buzz Lightyear",   rarity:"Rare",      emoji:"🚀", img:"" /* e.g. "images/buzz.png" */ },
+  { id:15, name:"Nemo",             rarity:"Rare",      emoji:"🐠", img:"" /* e.g. "images/nemo.png" */ },
+  { id:16, name:"Baymax",           rarity:"Rare",      emoji:"🤖", img:"" /* e.g. "images/baymax.png" */ },
+  { id:17, name:"Tinker Bell",      rarity:"Rare",      emoji:"🧚", img:"" /* e.g. "images/tinkerbell.png" */ },
+  // ---------- EPIC ----------
+  { id:18, name:"Elsa",             rarity:"Epic",      emoji:"❄️", img:"" /* e.g. "images/elsa.png" */ },
+  { id:19, name:"Rapunzel",         rarity:"Epic",      emoji:"🌼", img:"" /* e.g. "images/rapunzel.png" */ },
+  { id:20, name:"Moana",            rarity:"Epic",      emoji:"🌊", img:"" /* e.g. "images/moana.png" */ },
+  { id:21, name:"Genie",            rarity:"Epic",      emoji:"🧞", img:"" /* e.g. "images/genie.png" */ },
+  // ---------- LEGENDARY (Enchanted) ----------
+  { id:22, name:"Cinderella",       rarity:"Legendary", emoji:"👗", img:"" /* e.g. "images/cinderella.png" */ },
+  { id:23, name:"Sleeping Beauty's Fairy", rarity:"Legendary", emoji:"✨", img:"" /* e.g. "images/fairy.png" */ },
+  { id:24, name:"The Enchanted Rose", rarity:"Legendary", emoji:"🌹", img:"" /* e.g. "images/rose.png" */ }
+];
+
+/* ---------- Game settings (easy to tweak) ---------- */
+const START_COINS = 150;
+const SAVE_KEY = "starlightPulls_v1";
+const RARITIES = ["Common","Rare","Epic","Legendary"];
+const COLORS = {Common:"var(--common)",Rare:"var(--rare)",Epic:"var(--epic)",Legendary:"var(--legend)"};
+const CONVERT_VALUE = { Common:5, Rare:15, Epic:40, Legendary:100 }; // coins per extra copy
+const PACKS = [
+  { id:"standard", name:"Standard Pack", price:100, count:3, emoji:"⭐", cls:"",
+    desc:"3 cards from the Enchanted Archive.",
+    odds:{Common:60, Rare:25, Epic:12, Legendary:3} },
+  { id:"royal", name:"Royal Enchanted Pack", price:250, count:5, emoji:"👑", cls:"royal",
+    desc:"5 cards with boosted rare odds.",
+    odds:{Common:30, Rare:38, Epic:23, Legendary:9} }
+];
+
+/* ---------- Save system ---------- */
+let state = { coins:START_COINS, cards:{} };
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(s && typeof s.coins==="number" && s.cards) state = s;
+  }catch(e){}
+}
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+function renderCoins(bump){
+  $("coinVal").textContent = state.coins;
+  if(bump){ const c=$("coins"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); }
+}
+function addCoins(n){ state.coins+=n; save(); renderCoins(true); }
+function cardHTML(c, opts={}){
+  const art = c.img ? `<img src="${c.img}" alt="${c.name}" loading="lazy">` : `<span>${c.emoji}</span>`;
+  const count = state.cards[c.id]||0;
+  let extra="";
+  if(opts.badge && count>1) extra+=`<div class="badge">x${count}</div>`;
+  if(opts.isNew) extra+=`<div class="new">NEW</div>`;
+  return `<div class="card ${c.rarity}">${extra}<div class="art">${art}</div><div class="nm">${c.name}</div><div class="rl">${c.rarity==="Legendary"?"Enchanted":c.rarity}</div></div>`;
+}
+
+/* ---------- Navigation ---------- */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===b.dataset.view));
+  if(b.dataset.view==="binder") renderBinder();
+  if(b.dataset.view==="shop") renderShop();
+});
+
+/* ======================= MEMORY GAME ======================= */
+const MEM_EMOJIS = ["🏰","🧞","🪄","🐭","👑","🌹","🧚","⭐"];
+let mem = {open:[], matches:0, moves:0, lock:false};
+function newBoard(){
+  mem = {open:[], matches:0, moves:0, lock:false};
+  const deck = [...MEM_EMOJIS,...MEM_EMOJIS].sort(()=>Math.random()-.5);
+  $("memGrid").innerHTML = deck.map((e,i)=>
+    `<button class="mcard" data-i="${i}" data-e="${e}" aria-label="Hidden card"><div class="in"><div class="b">✦</div><div class="f">${e}</div></div></button>`).join("");
+  $("memGrid").querySelectorAll(".mcard").forEach(b=>b.onclick=()=>flipMem(b));
+  $("memWin").innerHTML=""; updMem();
+}
+function updMem(){ $("mMatches").textContent=mem.matches; $("mMoves").textContent=mem.moves; }
+function flipMem(b){
+  if(mem.lock || b.classList.contains("up") || b.classList.contains("done")) return;
+  b.classList.add("up"); mem.open.push(b);
+  if(mem.open.length===2){
+    mem.moves++; mem.lock=true;
+    const [a,c]=mem.open;
+    if(a.dataset.e===c.dataset.e){
+      setTimeout(()=>{
+        [a,c].forEach(x=>{x.classList.remove("up");x.classList.add("done")});
+        mem.matches++; mem.open=[]; mem.lock=false; addCoins(15); toast("Match! +15 coins"); updMem();
+        if(mem.matches===8){
+          setTimeout(()=>{ addCoins(50); toast("Board cleared! +50 bonus coins");
+            $("memWin").innerHTML=`🎉 All pairs found in ${mem.moves} moves! You earned ${8*15+50} coins.<br><br><button class="btn" id="again">Play Again</button>`;
+            $("again").onclick=newBoard; },500);
+        }
+      },450);
+    } else {
+      setTimeout(()=>{ a.classList.remove("up"); c.classList.remove("up"); mem.open=[]; mem.lock=false; },800);
+    }
+    updMem();
+  }
+}
+$("mReset").onclick=newBoard;
+
+/* ======================= SHOP & RNG ======================= */
+function renderShop(){
+  $("packs").innerHTML = PACKS.map(p=>`
+    <div class="pack ${p.cls}">
+      <div class="art">${p.emoji}</div>
+      <h3>${p.name}</h3><p>${p.desc}</p>
+      <div class="odds">${RARITIES.map(r=>`<span style="color:${COLORS[r]}">${r==="Legendary"?"Enchanted":r} ${p.odds[r]}%</span>`).join("")}</div>
+      <button class="btn" data-pack="${p.id}" ${state.coins<p.price?"disabled":""}>Open for ${p.price} 🪙</button>
+    </div>`).join("");
+  document.querySelectorAll("[data-pack]").forEach(b=>b.onclick=()=>buyPack(PACKS.find(p=>p.id===b.dataset.pack)));
+}
+function rollRarity(odds){
+  const total = RARITIES.reduce((s,r)=>s+odds[r],0);
+  let n = Math.random()*total;
+  for(const r of RARITIES){ if((n-=odds[r])<0) return r; }
+  return "Common";
+}
+function pullCard(odds){
+  const r = rollRarity(odds);
+  const pool = CARDS.filter(c=>c.rarity===r);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+let opening=false;
+function buyPack(p){
+  if(opening) return;
+  if(state.coins<p.price){ toast("Not enough coins. Play Memory Match to earn more!"); return; }
+  opening=true;
+  state.coins-=p.price;
+  // Roll cards, then save immediately so a page refresh can't lose the pull.
+  const pulls=[];
+  for(let i=0;i<p.count;i++){
+    const c=pullCard(p.odds);
+    pulls.push({card:c, isNew:!(state.cards[c.id]>0)});
+    state.cards[c.id]=(state.cards[c.id]||0)+1;
+  }
+  save(); renderCoins(true); renderShop();
+  playOpening(p,pulls);
+}
+function playOpening(p,pulls){
+  const ov=$("overlay"), stage=$("stage"), hint=$("hint"), done=$("doneBtn");
+  ov.classList.add("show"); done.style.display="none"; hint.textContent="The pack is stirring…";
+  stage.innerHTML=`<div class="bigpack ${p.cls} shake">${p.emoji}</div>`;
+  setTimeout(()=>{
+    const b=document.createElement("div"); b.className="burst"; document.body.appendChild(b);
+    setTimeout(()=>b.remove(),1000);
+    stage.innerHTML=`<div class="reveal">${pulls.map((x,i)=>`
+      <button class="flip" style="animation-delay:${i*.12}s" aria-label="Reveal card ${i+1}">
+        <div class="in"><div class="back">✦</div><div class="front">${cardHTML(x.card,{isNew:x.isNew})}</div></div>
+      </button>`).join("")}</div>`;
+    hint.textContent="Tap each card to reveal it";
+    let flipped=0;
+    stage.querySelectorAll(".flip").forEach(f=>f.onclick=()=>{
+      if(f.classList.contains("flipped")) return;
+      f.classList.add("flipped"); flipped++;
+      if(flipped===pulls.length){ hint.textContent="What a pull!"; done.style.display="inline-block"; done.focus(); }
+    });
+  },1500);
+}
+$("doneBtn").onclick=()=>{ $("overlay").classList.remove("show"); opening=false; };
+
+/* ======================= BINDER ======================= */
+let filter="All";
+const FILTERS=["All","Owned","Missing",...RARITIES];
+function renderBinder(){
+  $("filters").innerHTML = FILTERS.map(f=>`<button class="chip ${f===filter?"on":""}" data-f="${f}">${f==="Legendary"?"Enchanted":f}</button>`).join("");
+  $("filters").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderBinder();});
+  const owned = CARDS.filter(c=>state.cards[c.id]>0).length;
+  $("progress").textContent=`Collected ${owned} of ${CARDS.length} cards`;
+  const list = CARDS.filter(c=>{
+    const o=state.cards[c.id]>0;
+    if(filter==="All") return true;
+    if(filter==="Owned") return o;
+    if(filter==="Missing") return !o;
+    return c.rarity===filter;
+  });
+  $("grid").innerHTML = list.length ? list.map(c=>{
+    if(!(state.cards[c.id]>0)) return `<div class="card locked ${c.rarity}"><div class="art"><span>???</span></div><div class="nm">Locked</div><div class="rl">${c.rarity==="Legendary"?"Enchanted":c.rarity}</div></div>`;
+    return cardHTML(c,{badge:true});
+  }).join("") : `<div class="empty">No cards here yet. Open a pack to start filling your binder.</div>`;
+  const val = dupValue();
+  $("convertBtn").disabled = val===0;
+  $("convertInfo").textContent = val ? `Extra copies are worth ${val} coins. One of each card is always kept.` : "No extra copies to convert yet.";
+}
+function dupValue(){
+  return CARDS.reduce((s,c)=>s+Math.max(0,(state.cards[c.id]||0)-1)*CONVERT_VALUE[c.rarity],0);
+}
+$("convertBtn").onclick=()=>{
+  const val=dupValue(); if(!val) return;
+  if(!confirm(`Convert all extra copies into ${val} coins? You keep one of every card.`)) return;
+  CARDS.forEach(c=>{ if(state.cards[c.id]>1) state.cards[c.id]=1; });
+  addCoins(val); toast(`Converted duplicates: +${val} coins`); renderBinder();
+};
+
+/* ======================= RESET ======================= */
+$("resetSave").onclick=()=>{
+  if(!confirm("Reset everything? Your coins and collection will be erased.")) return;
+  state={coins:START_COINS,cards:{}}; save(); renderCoins(); renderShop(); renderBinder(); newBoard();
+  toast("Save data reset. Fresh start!");
+};
+
+/* ======================= INIT ======================= */
+load(); renderCoins(); renderShop(); renderBinder(); newBoard();
+</script>
+</body>
+</html>
