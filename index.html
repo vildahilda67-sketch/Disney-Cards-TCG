@@ -108,6 +108,27 @@ h2{font-family:var(--display);font-size:1.7rem;color:var(--gold2);margin-bottom:
 .progress{font-weight:800;color:var(--gold2);margin-bottom:10px}
 .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:30px}
+#binder{scroll-margin-top:140px}
+.setinfo{background:linear-gradient(180deg,#ffffff12,#ffffff06);border:1px solid #f4c95d55;border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.setinfo:empty{display:none}
+.setinfo .sn{font-family:var(--display);font-weight:800;color:var(--gold2);font-size:1.1rem}
+.setinfo .sd{color:var(--muted);font-size:.88rem;margin:2px 0 8px}
+.setinfo .sb{height:8px;border-radius:99px;background:#ffffff1c;overflow:hidden}
+.setinfo .sb i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#fff3b0);border-radius:99px}
+.setinfo .sc{font-weight:800;font-size:.85rem;margin-top:6px}
+.tools select{max-width:100%}
+.tools input,.tools select{background:#ffffff12;color:var(--text);border:1px solid #ffffff33;border-radius:10px;padding:8px 12px;font:inherit;font-size:.9rem}
+.tools input[type=search]{flex:1;min-width:180px;max-width:320px}
+.tools select option{color:#111}
+.showing{color:var(--muted);font-size:.88rem;margin-bottom:10px;min-height:1.2em}
+.pager{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:22px}
+.pager button{min-width:40px;padding:8px 12px;border-radius:10px;background:#ffffff12;border:1px solid #ffffff22;font-weight:800}
+.pager button:hover:not(:disabled){background:#ffffff22}
+.pager button.on{background:var(--gold);color:#2a1d00;border-color:var(--gold)}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+.pager .dots{color:var(--muted);padding:0 4px}
+.pager .jump{display:flex;align-items:center;gap:6px;margin-left:8px;color:var(--muted);font-size:.85rem}
+.pager .jump input{width:72px;background:#ffffff12;color:var(--text);border:1px solid #ffffff33;border-radius:10px;padding:7px 8px;font:inherit}
 
 /* Opening overlay */
 #overlay{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;
@@ -182,10 +203,21 @@ footer button{background:none;color:var(--muted);text-decoration:underline;font-
     <div class="progress" id="progress"></div>
     <div class="tools" id="filters"></div>
     <div class="tools">
+      <input type="search" id="search" placeholder="Search your cards by name" aria-label="Search owned cards">
+      <select id="setFilter" aria-label="Collection"></select>
+      <select id="pageSize" aria-label="Cards per page">
+        <option value="12">12 per page</option><option value="24" selected>24 per page</option>
+        <option value="48">48 per page</option><option value="96">96 per page</option>
+      </select>
+    </div>
+    <div class="tools">
       <button class="btn" id="convertBtn">Convert duplicates to coins</button>
       <span class="sub" style="margin:0" id="convertInfo"></span>
     </div>
+    <div class="setinfo" id="setInfo"></div>
+    <div class="showing" id="showing"></div>
     <div class="grid" id="grid"></div>
+    <nav class="pager" id="pager" aria-label="Collection pages"></nav>
   </section>
 </main>
 
@@ -211,40 +243,71 @@ footer button{background:none;color:var(--muted);text-decoration:underline;font-
    When `img` is empty (""), the game shows the `emoji` instead.
    Rarity must be exactly: "Common", "Rare", "Epic" or "Legendary".
    Keep every `id` unique (it is used in the save file).
+   COLLECTIONS: give a card `sets:["collection-id"]` to place it in one or more
+   collections (see the COLLECTIONS list below the cards). `sets` is optional.
    ===================================================================== */
 const CARDS = [
   // ---------- COMMON ----------
-  { id:1,  name:"Mickey Mouse",     rarity:"Common",    emoji:"🐭", img:"images/MickeyMouse.png" /* e.g. "images/mickey.png" */ },
-  { id:2,  name:"Minnie Mouse",     rarity:"Common",    emoji:"🎀", img:"images/MinnieMouse.png" /* e.g. "images/minnie.png" */ },
-  { id:3,  name:"Donald Duck",      rarity:"Common",    emoji:"🦆", img:"" /* e.g. "images/donald.png" */ },
-  { id:4,  name:"Goofy",            rarity:"Common",    emoji:"🐶", img:"" /* e.g. "images/goofy.png" */ },
-  { id:5,  name:"Pluto",            rarity:"Common",    emoji:"🦴", img:"" /* e.g. "images/pluto.png" */ },
+  { id:1,  name:"Mickey Mouse",     rarity:"Common",    emoji:"🐭", sets:["mickey-friends"], img:"images/MickeyMouse.png" /* e.g. "images/mickey.png" */ },
+  { id:2,  name:"Minnie Mouse",     rarity:"Common",    emoji:"🎀", sets:["mickey-friends"], img:"images/MinnieMouse.png" /* e.g. "images/minnie.png" */ },
+  { id:3,  name:"Donald Duck",      rarity:"Common",    emoji:"🦆", sets:["mickey-friends"], img:"" /* e.g. "images/donald.png" */ },
+  { id:4,  name:"Goofy",            rarity:"Common",    emoji:"🐶", sets:["mickey-friends"], img:"" /* e.g. "images/goofy.png" */ },
+  { id:5,  name:"Pluto",            rarity:"Common",    emoji:"🦴", sets:["mickey-friends"], img:"" /* e.g. "images/pluto.png" */ },
   { id:6,  name:"Dumbo",            rarity:"Common",    emoji:"🐘", img:"" /* e.g. "images/dumbo.png" */ },
-  { id:7,  name:"Thumper",          rarity:"Common",    emoji:"🐰", img:"" /* e.g. "images/thumper.png" */ },
-  { id:8,  name:"Pumbaa",           rarity:"Common",    emoji:"🐗", img:"" /* e.g. "images/pumbaa.png" */ },
-  { id:9,  name:"Olaf",             rarity:"Common",    emoji:"⛄", img:"" /* e.g. "images/olaf.png" */ },
-  { id:10, name:"Abu",              rarity:"Common",    emoji:"🐒", img:"" /* e.g. "images/abu.png" */ },
+  { id:7,  name:"Thumper",          rarity:"Common",    emoji:"🐰", sets:["sidekicks"], img:"" /* e.g. "images/thumper.png" */ },
+  { id:8,  name:"Pumbaa",           rarity:"Common",    emoji:"🐗", sets:["lion-king","sidekicks"], img:"" /* e.g. "images/pumbaa.png" */ },
+  { id:9,  name:"Olaf",             rarity:"Common",    emoji:"⛄", sets:["frozen","sidekicks"], img:"" /* e.g. "images/olaf.png" */ },
+  { id:10, name:"Abu",              rarity:"Common",    emoji:"🐒", sets:["sidekicks"], img:"" /* e.g. "images/abu.png" */ },
   // ---------- RARE ----------
-  { id:11, name:"Simba",            rarity:"Rare",      emoji:"🦁", img:"" /* e.g. "images/simba.png" */ },
+  { id:11, name:"Simba",            rarity:"Rare",      emoji:"🦁", sets:["lion-king"], img:"" /* e.g. "images/simba.png" */ },
   { id:12, name:"Stitch",           rarity:"Rare",      emoji:"👽", img:"" /* e.g. "images/stitch.png" */ },
-  { id:13, name:"Woody",            rarity:"Rare",      emoji:"🤠", img:"" /* e.g. "images/woody.png" */ },
-  { id:14, name:"Buzz Lightyear",   rarity:"Rare",      emoji:"🚀", img:"" /* e.g. "images/buzz.png" */ },
-  { id:15, name:"Nemo",             rarity:"Rare",      emoji:"🐠", img:"" /* e.g. "images/nemo.png" */ },
+  { id:13, name:"Woody",            rarity:"Rare",      emoji:"🤠", sets:["pixar-pals"], img:"" /* e.g. "images/woody.png" */ },
+  { id:14, name:"Buzz Lightyear",   rarity:"Rare",      emoji:"🚀", sets:["pixar-pals"], img:"" /* e.g. "images/buzz.png" */ },
+  { id:15, name:"Nemo",             rarity:"Rare",      emoji:"🐠", sets:["pixar-pals"], img:"" /* e.g. "images/nemo.png" */ },
   { id:16, name:"Baymax",           rarity:"Rare",      emoji:"🤖", img:"" /* e.g. "images/baymax.png" */ },
-  { id:17, name:"Tinker Bell",      rarity:"Rare",      emoji:"🧚", img:"" /* e.g. "images/tinkerbell.png" */ },
+  { id:17, name:"Tinker Bell",      rarity:"Rare",      emoji:"🧚", sets:["magic-wishes"], img:"" /* e.g. "images/tinkerbell.png" */ },
   // ---------- EPIC ----------
-  { id:18, name:"Elsa",             rarity:"Epic",      emoji:"❄️", img:"" /* e.g. "images/elsa.png" */ },
-  { id:19, name:"Rapunzel",         rarity:"Epic",      emoji:"🌼", img:"" /* e.g. "images/rapunzel.png" */ },
-  { id:20, name:"Moana",            rarity:"Epic",      emoji:"🌊", img:"" /* e.g. "images/moana.png" */ },
-  { id:21, name:"Genie",            rarity:"Epic",      emoji:"🧞", img:"" /* e.g. "images/genie.png" */ },
+  { id:18, name:"Elsa",             rarity:"Epic",      emoji:"❄️", sets:["frozen"], img:"" /* e.g. "images/elsa.png" */ },
+  { id:19, name:"Rapunzel",         rarity:"Epic",      emoji:"🌼", sets:["disney-princesses"], img:"" /* e.g. "images/rapunzel.png" */ },
+  { id:20, name:"Moana",            rarity:"Epic",      emoji:"🌊", sets:["disney-princesses"], img:"" /* e.g. "images/moana.png" */ },
+  { id:21, name:"Genie",            rarity:"Epic",      emoji:"🧞", sets:["magic-wishes"], img:"" /* e.g. "images/genie.png" */ },
   // ---------- LEGENDARY (Enchanted) ----------
-  { id:22, name:"Cinderella",       rarity:"Legendary", emoji:"👗", img:"" /* e.g. "images/cinderella.png" */ },
-  { id:23, name:"Sleeping Beauty's Fairy", rarity:"Legendary", emoji:"✨", img:"" /* e.g. "images/fairy.png" */ },
-  { id:24, name:"The Enchanted Rose", rarity:"Legendary", emoji:"🌹", img:"" /* e.g. "images/rose.png" */ }
+  { id:22, name:"Cinderella",       rarity:"Legendary", emoji:"👗", sets:["disney-princesses"], img:"" /* e.g. "images/cinderella.png" */ },
+  { id:23, name:"Sleeping Beauty's Fairy", rarity:"Legendary", emoji:"✨", sets:["magic-wishes"], img:"" /* e.g. "images/fairy.png" */ },
+  { id:24, name:"The Enchanted Rose", rarity:"Legendary", emoji:"🌹", sets:["magic-wishes"], img:"" /* e.g. "images/rose.png" */ },
+  // ---------- LITTLE MERMAID (new) ----------
+  { id:25, name:"Flounder",         rarity:"Common",    emoji:"🐟",   sets:["little-mermaid","sidekicks"], img:"" /* e.g. "images/flounder.png" */ },
+  { id:26, name:"Sebastian",        rarity:"Rare",      emoji:"🦀",   sets:["little-mermaid","sidekicks"], img:"" /* e.g. "images/sebastian.png" */ },
+  { id:27, name:"Ariel",            rarity:"Epic",      emoji:"🧜‍♀️", sets:["little-mermaid","disney-princesses"], img:"" /* e.g. "images/ariel.png" */ },
+  { id:28, name:"Ursula",           rarity:"Epic",      emoji:"🐙",   sets:["little-mermaid"], img:"" /* e.g. "images/ursula.png" */ }
 ];
+
+/* =====================================================================
+   COLLECTIONS
+   ---------------------------------------------------------------------
+   Each collection is a themed group shown in the binder's collection menu.
+   To put a card in a collection, add its `id` to that card's `sets` list
+   above, e.g.  sets:["mickey-friends","sidekicks"]  (a card can be in many).
+   `sets` is optional; cards without it simply belong to no collection.
+   To add a collection, add a line here and reference its id from cards.
+   ===================================================================== */
+const COLLECTIONS = [
+  { id:"mickey-friends",    name:"Mickey & Friends",  emoji:"🐭", desc:"The gang that started it all." },
+  { id:"little-mermaid",    name:"The Little Mermaid", emoji:"🧜‍♀️", desc:"Life under the sea." },
+  { id:"disney-princesses", name:"Disney Princesses", emoji:"👑", desc:"Royalty, dreamers and adventurers." },
+  { id:"sidekicks",         name:"Loyal Sidekicks",   emoji:"🤝", desc:"Best friends who steal the show." },
+  { id:"lion-king",         name:"The Lion King",     emoji:"🦁", desc:"Hakuna matata." },
+  { id:"frozen",            name:"Frozen",            emoji:"❄️", desc:"Let the cold in." },
+  { id:"pixar-pals",        name:"Pixar Pals",        emoji:"🚀", desc:"To infinity and beyond." },
+  { id:"magic-wishes",      name:"Magic & Wishes",    emoji:"✨", desc:"Spells, wishes and enchantments." }
+];
+/* Built automatically: collection id -> list of its cards (in CARDS order) */
+const SET_CARDS = {};
+COLLECTIONS.forEach(s=>SET_CARDS[s.id]=CARDS.filter(c=>c.sets && c.sets.includes(s.id)));
 
 /* ---------- Game settings (easy to tweak) ---------- */
 const START_COINS = 150;
+const PAGE_SIZE = 24; // cards per binder page (players can also change it in the binder)
 const SAVE_KEY = "starlightPulls_v1";
 const RARITIES = ["Common","Rare","Epic","Legendary"];
 const COLORS = {Common:"var(--common)",Rare:"var(--rare)",Epic:"var(--epic)",Legendary:"var(--legend)"};
@@ -257,6 +320,10 @@ const PACKS = [
     desc:"5 cards with boosted rare odds.",
     odds:{Common:30, Rare:38, Epic:23, Legendary:9} }
 ];
+
+/* Pre-sorted lists by rarity so pulls stay fast even with thousands of cards */
+const BY_RARITY = {};
+RARITIES.forEach(r=>BY_RARITY[r]=CARDS.filter(c=>c.rarity===r));
 
 /* ---------- Save system ---------- */
 let state = { coins:START_COINS, cards:{} };
@@ -280,7 +347,7 @@ function renderCoins(bump){
 }
 function addCoins(n){ state.coins+=n; save(); renderCoins(true); }
 function cardHTML(c, opts={}){
-  const art = c.img ? `<img src="${c.img}" alt="${c.name}" loading="lazy">` : `<span>${c.emoji}</span>`;
+  const art = c.img ? `<img src="${c.img}" alt="${c.name}" loading="lazy" decoding="async">` : `<span>${c.emoji}</span>`;
   const count = state.cards[c.id]||0;
   let extra="";
   if(opts.badge && count>1) extra+=`<div class="badge">x${count}</div>`;
@@ -350,9 +417,9 @@ function rollRarity(odds){
   return "Common";
 }
 function pullCard(odds){
-  const r = rollRarity(odds);
-  const pool = CARDS.filter(c=>c.rarity===r);
-  return pool[Math.floor(Math.random()*pool.length)];
+  const pool = BY_RARITY[rollRarity(odds)];
+  const list = pool.length ? pool : CARDS; // fallback if a tier is empty
+  return list[Math.floor(Math.random()*list.length)];
 }
 let opening=false;
 function buyPack(p){
@@ -393,28 +460,75 @@ function playOpening(p,pulls){
 $("doneBtn").onclick=()=>{ $("overlay").classList.remove("show"); opening=false; };
 
 /* ======================= BINDER ======================= */
-let filter="All";
+let filter="All", setFilter="all", page=1, query="", pageSize=PAGE_SIZE;
 const FILTERS=["All","Owned","Missing",...RARITIES];
 function renderBinder(){
   $("filters").innerHTML = FILTERS.map(f=>`<button class="chip ${f===filter?"on":""}" data-f="${f}">${f==="Legendary"?"Enchanted":f}</button>`).join("");
-  $("filters").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderBinder();});
+  $("filters").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.f;page=1;renderBinder();});
   const owned = CARDS.filter(c=>state.cards[c.id]>0).length;
   $("progress").textContent=`Collected ${owned} of ${CARDS.length} cards`;
-  const list = CARDS.filter(c=>{
+  renderSets();
+  const q=query.trim().toLowerCase();
+  const list = (setFilter==="all" ? CARDS : SET_CARDS[setFilter]).filter(c=>{
     const o=state.cards[c.id]>0;
+    if(q && !(o && c.name.toLowerCase().includes(q))) return false; // search only matches owned cards
     if(filter==="All") return true;
     if(filter==="Owned") return o;
     if(filter==="Missing") return !o;
     return c.rarity===filter;
   });
-  $("grid").innerHTML = list.length ? list.map(c=>{
+  const pages=Math.max(1,Math.ceil(list.length/pageSize));
+  if(page>pages) page=pages;
+  const start=(page-1)*pageSize, slice=list.slice(start,start+pageSize);
+  $("showing").textContent = list.length ? `Showing ${start+1}–${start+slice.length} of ${list.length}` : "";
+  renderPager(pages);
+  $("grid").innerHTML = list.length ? slice.map(c=>{
     if(!(state.cards[c.id]>0)) return `<div class="card locked ${c.rarity}"><div class="art"><span>???</span></div><div class="nm">Locked</div><div class="rl">${c.rarity==="Legendary"?"Enchanted":c.rarity}</div></div>`;
     return cardHTML(c,{badge:true});
-  }).join("") : `<div class="empty">No cards here yet. Open a pack to start filling your binder.</div>`;
+  }).join("") : `<div class="empty">${q?"No owned cards match that search.":"No cards here yet. Open a pack to start filling your binder."}</div>`;
   const val = dupValue();
   $("convertBtn").disabled = val===0;
   $("convertInfo").textContent = val ? `Extra copies are worth ${val} coins. One of each card is always kept.` : "No extra copies to convert yet.";
 }
+function renderSets(){
+  if(setFilter!=="all" && !SET_CARDS[setFilter]) setFilter="all";
+  const have = s => SET_CARDS[s.id].filter(c=>state.cards[c.id]>0).length;
+  const shown = COLLECTIONS.filter(s=>SET_CARDS[s.id].length);
+  $("setFilter").innerHTML = `<option value="all">All collections</option>` +
+    shown.map(s=>`<option value="${s.id}">${s.emoji} ${s.name} (${have(s)}/${SET_CARDS[s.id].length})</option>`).join("");
+  $("setFilter").value = setFilter;
+  if(setFilter==="all"){ $("setInfo").innerHTML=""; return; }
+  const s = COLLECTIONS.find(x=>x.id===setFilter), total = SET_CARDS[s.id].length, n = have(s);
+  $("setInfo").innerHTML =
+    `<div class="sn">${s.emoji} ${s.name}</div><div class="sd">${s.desc||""}</div>` +
+    `<div class="sb"><i style="width:${Math.round(n/total*100)}%"></i></div>` +
+    `<div class="sc">${n} of ${total} collected${n===total?" ✓ Complete":""}</div>`;
+}
+function pageNums(cur,total){
+  const keep=[...new Set([1,total,cur-1,cur,cur+1])].filter(n=>n>=1&&n<=total).sort((a,b)=>a-b);
+  const out=[]; keep.forEach((n,i)=>{ if(i&&n-keep[i-1]>1) out.push("…"); out.push(n); });
+  return out;
+}
+function renderPager(total){
+  const el=$("pager");
+  if(total<=1){ el.innerHTML=""; return; }
+  el.innerHTML =
+    `<button data-p="${page-1}" ${page===1?"disabled":""}>‹ Prev</button>` +
+    pageNums(page,total).map(n=> n==="…" ? `<span class="dots">…</span>`
+      : `<button data-p="${n}" class="${n===page?"on":""}" ${n===page?'aria-current="page"':""}>${n}</button>`).join("") +
+    `<button data-p="${page+1}" ${page===total?"disabled":""}>Next ›</button>` +
+    `<label class="jump">Go to <input type="number" id="jump" min="1" max="${total}" value="${page}"></label>`;
+  el.querySelectorAll("button[data-p]").forEach(b=>b.onclick=()=>goPage(+b.dataset.p));
+  $("jump").onchange=e=>goPage(parseInt(e.target.value,10)||1);
+}
+function goPage(n){
+  page=Math.max(1,n); renderBinder();
+  $("binder").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("search").oninput=e=>{ query=e.target.value; page=1; renderBinder(); };
+$("setFilter").onchange=e=>{ setFilter=e.target.value; page=1; renderBinder(); };
+$("pageSize").onchange=e=>{ pageSize=+e.target.value; page=1; renderBinder(); };
+
 function dupValue(){
   return CARDS.reduce((s,c)=>s+Math.max(0,(state.cards[c.id]||0)-1)*CONVERT_VALUE[c.rarity],0);
 }
